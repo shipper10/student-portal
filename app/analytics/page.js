@@ -239,7 +239,7 @@ export default function AnalyticsPage() {
                     const colors = REMARK_COLORS[label] || REMARK_COLORS.Other;
                     return (
                       <div key={label} className="flex items-center gap-3 text-sm">
-                        <div className={`w-40 shrink-0 px-2 py-0.5 rounded text-xs font-medium ${colors.badge}`}>
+                        <div className={`w-28 sm:w-36 shrink-0 px-2 py-0.5 rounded text-xs font-medium truncate ${colors.badge}`}>
                           {label}
                         </div>
                         <div className="flex-1 h-6 rounded bg-gray-100 dark:bg-gray-800 overflow-hidden">
@@ -248,7 +248,7 @@ export default function AnalyticsPage() {
                             style={{ width: `${pct}%` }}
                           />
                         </div>
-                        <div className="w-24 text-right text-gray-500 dark:text-gray-400">
+                        <div className="w-16 sm:w-20 text-right text-xs sm:text-sm text-gray-500 dark:text-gray-400 shrink-0">
                           {n} ({pct.toFixed(0)}%)
                         </div>
                       </div>
