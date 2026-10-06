@@ -3,7 +3,7 @@ import Providers from "./components/Providers";
 import AppNav from "./components/AppNav";
 
 export const metadata = {
-  title: "Student Results Portal",
+  title: "BahriMed B13",
   description: "Filterable, rankable student results",
 };
 
