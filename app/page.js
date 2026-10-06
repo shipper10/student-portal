@@ -23,9 +23,9 @@ const BASE_COLUMNS = [
 ];
 const DEFAULT_VISIBILITY = {
   rank_all: true,
-  id: true,
-  name_en: true,
-  name_ar: false,
+  id: false,
+  name_en: false,
+  name_ar: true,
   gpa: true, // GPA + remark of the selected view
   sem1_gpa: true,
   sem2_gpa: true,
@@ -44,7 +44,7 @@ const BASE_LABELS = {
   id: "University ID",
   name_en: "Name (English)",
   name_ar: "Name (Arabic)",
-  gpa: "GPA / Remark",
+  gpa: "GPA/RM",
   sem1_gpa: "First semester GPA",
   sem2_gpa: "Second semester GPA",
   rank_cohort: "Rank (cohort)",
@@ -190,7 +190,7 @@ export default function Page() {
       rank_all: "Rank",
       name_en: "Name (EN)",
       name_ar: "Name (AR)",
-      gpa: activeView.startsWith("cum") ? "Cumulative GPA / Status" : "GPA / Remark",
+      gpa: activeView.startsWith("cum") ? "Cumulative GPA / Status" : "GPA/RM",
       sem1_gpa: `Sem ${semBase}`,
       sem2_gpa: `Sem ${semBase + 1}`,
       rank_cohort: "Cohort Rank",
@@ -241,7 +241,7 @@ export default function Page() {
       <div className="shrink-0 max-w-7xl w-full mx-auto px-3 sm:px-6 pt-4 sm:pt-6">
         <header className="flex items-center justify-between gap-2 mb-3">
           <div className="min-w-0">
-            <h1 className="text-lg sm:text-2xl font-bold leading-tight">Student Results Portal</h1>
+            <h1 className="text-lg sm:text-2xl font-bold leading-tight">BahriMed B13</h1>
             <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
               {counts.all} students{COHORTS.map((c) => ` · ${counts[c] ?? 0} in cohort ${c}`).join("")}
             </p>
