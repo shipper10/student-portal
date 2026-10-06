@@ -34,7 +34,7 @@ const DEFAULT_VISIBILITY = {
 
 const BOARD_DEFAULTS = { cohort: "all", sortBy: "gpa", sortDir: "desc", visibility: DEFAULT_VISIBILITY, order: BASE_COLUMNS, pinned: [], viewParam: "" };
 // On a phone: only rank, name and GPA, with rank and name pinned.
-const MOBILE_DEFAULTS = { visibility: { ...DEFAULT_VISIBILITY, id: false, sem1_gpa: false, sem2_gpa: false }, pinned: ["rank_all", "name_en"] };
+const MOBILE_DEFAULTS = { visibility: { ...DEFAULT_VISIBILITY, id: false, sem1_gpa: true, sem2_gpa: true }, pinned: [] };
 
 // Columns whose first click sorts ascending (rank 1 first, names A-Z); the rest start descending.
 const ASC_FIRST = new Set(["name_en", "name_ar", "rank_all", "rank_cohort"]);
