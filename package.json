@@ -1,0 +1,28 @@
+{
+  "name": "student-portal",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "@clerk/nextjs": "^7.9.11",
+    "@clerk/ui": "^1.39.1",
+    "@supabase/supabase-js": "^2.45.4",
+    "html2canvas": "^1.4.1",
+    "next": "~15.5.9",
+    "react": "~19.2.3",
+    "react-dom": "~19.2.3"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.13"
+  },
+  "engines": {
+    "node": ">=20.9"
+  }
+}

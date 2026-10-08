@@ -1,0 +1,216 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { describeGrade } from "../../lib/courses";
+import PageHeader from "../components/PageHeader";
+import ShareDialog from "../components/profile/ShareDialog";
+import { fmtGpa, fmtRankFull } from "../../lib/format";
+import { PERMISSIONS } from "../../lib/permissions";
+
+const nav = "hidden sm:inline-block px-3 py-2 rounded-lg text-sm border border-gray-300 dark:border-gray-700 whitespace-nowrap";
+const rankText = (r) => (r ? fmtRankFull(r.rank, r.total, r.tie) : "—");
+
+function Stat({ label, value }) {
+  return (
+    <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-2.5">
+      <div className="text-[11px] leading-tight text-gray-500 dark:text-gray-400">{label}</div>
+      <div className="text-lg font-semibold tabular-nums">{value}</div>
+    </div>
+  );
+}
+
+function LinkForm({ onLinked, admin = false }) {
+  const [id, setId] = useState("");
+  const [msg, setMsg] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submit() {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch("/api/link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ studentId: id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      onLinked();
+    } catch (e) {
+      setMsg(String(e.message || e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="max-w-md mx-auto rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
+      <h2 className="text-lg font-semibold">Link your university ID</h2>
+      <p className="text-sm text-gray-500 dark:text-gray-400">
+        {admin
+          ? "Administrator: you can link this account to a student record to try the site as a student, and unlink it again at any time."
+          : "Students: enter your university ID once. If the ID is valid, your account is linked immediately. Not a student of this batch? Ask the administrator to approve your account as a visitor."}
+      </p>
+      <input
+        value={id}
+        onChange={(e) => setId(e.target.value)}
+        placeholder="University ID"
+        className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2"
+      />
+      <button onClick={submit} disabled={busy || !id.trim()} className="w-full rounded-lg bg-blue-600 text-white py-2 disabled:opacity-50">
+        {busy ? "Linking…" : "Link"}
+      </button>
+      {msg && <p className="text-sm text-red-600">{msg}</p>}
+    </div>
+  );
+}
+
+function Notice({ title, text }) {
+  return (
+    <div className="max-w-md mx-auto rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-1">
+      <h2 className="text-lg font-semibold">{title}</h2>
+      <p className="text-sm text-gray-500 dark:text-gray-400">{text}</p>
+    </div>
+  );
+}
+
+function CourseRow({ c }) {
+  const flag = describeGrade(c);
+  return (
+    <div className="flex items-center justify-between gap-2 py-1 text-sm border-b border-gray-100 dark:border-gray-800 last:border-0">
+      <span className="truncate">
+        {c.name} <span className="text-xs text-gray-400">· {c.credits}h</span>
+      </span>
+      <span className={`shrink-0 px-2 py-0.5 rounded text-xs font-semibold ${flag ? flag.chip : ""}`}>
+        {c.grade}
+        {c.type === "supplementary" ? " · supp" : ""}
+      </span>
+    </div>
+  );
+}
+
+// Newest year is open; older years are collapsed to one summary line.
+// Closed by default; the arrow turns when a year is opened.
+function YearBlock({ y }) {
+  const sems = [...new Set(y.courses.map((c) => c.semester))];
+  return (
+    <details className="group rounded-lg border border-gray-200 dark:border-gray-700">
+      <summary className="cursor-pointer select-none px-3 py-2 flex items-center gap-2 text-sm list-none [&::-webkit-details-marker]:hidden">
+        <span className="text-gray-400 transition-transform group-open:rotate-90">▶</span>
+        <span className="font-semibold">Year {y.year}</span>
+        <span className="ml-auto text-gray-500 dark:text-gray-400 tabular-nums text-right">
+          GPA {fmtGpa(y.gpa)} · Rank {rankText(y.rank)}
+          {y.remark ? ` · ${y.remark}` : ""}
+        </span>
+      </summary>
+      <div className="px-3 pb-2">
+        {sems.map((n) => (
+          <div key={n} className="mb-1">
+            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 py-1">
+              Semester {n} · GPA {fmtGpa(y.semesters.find((s) => s.semester === n)?.gpa)}
+            </div>
+            {y.courses.filter((c) => c.semester === n).map((c) => <CourseRow key={c.code} c={c} />)}
+          </div>
+        ))}
+      </div>
+    </details>
+  );
+}
+
+function Profile({ s, onUnlink }) {
+  const [shareOpen, setShareOpen] = useState(false);
+  const o = s.overall, c = s.cumulative;
+  const years = [...s.years].sort((a, b) => b.year - a.year);
+  const latest = years.find((y) => typeof y.gpa === "number");
+  return (
+    <div className="space-y-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-lg font-bold leading-tight">{s.name_en}</h2>
+          {s.name_ar && <div dir="rtl" className="text-sm text-gray-600 dark:text-gray-300">{s.name_ar}</div>}
+          <div className="text-xs text-gray-500 dark:text-gray-400">ID {s.student_id} · Cohort {s.cohort}</div>
+        </div>
+        {s.years.length > 0 && (
+          <button onClick={() => setShareOpen(true)} className="shrink-0 px-3 py-2 rounded-lg text-sm border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800">
+            ⬇ Export
+          </button>
+        )}
+      </div>
+      {shareOpen && <ShareDialog student={s} onClose={() => setShareOpen(false)} />}
+      {/* row 1: the latest year; row 2: cumulative over the years completed so far */}
+      <div className="grid grid-cols-3 gap-2">
+        <Stat label={latest ? `Year ${latest.year} GPA` : "Latest year GPA"} value={fmtGpa(latest?.gpa)} />
+        <Stat label="Rank (batch)" value={rankText(latest?.rank)} />
+        <Stat label={`Rank (cohort ${s.cohort})`} value={rankText(latest?.cohortRank)} />
+        <Stat label={c ? (c.final ? "Final CGPA" : `CGPA · Y1–Y${c.through}`) : "CGPA"} value={fmtGpa(c?.gpa)} />
+        <Stat label="CGPA rank (batch)" value={rankText(c?.rank)} />
+        <Stat label={`CGPA rank (cohort ${s.cohort})`} value={rankText(c?.cohortRank)} />
+      </div>
+      <p className="text-xs text-gray-500 dark:text-gray-400">
+        {c?.final ? "Final result for all years." : `Provisional: the final result is available after all ${o.maxYear} years.`}{" "}
+        Ranks compare you with the students who completed the same years.
+      </p>
+      {years.length === 0 && <p className="text-gray-500">No results have been published for you yet.</p>}
+      {years.map((y) => <YearBlock key={y.year} y={y} />)}
+      {onUnlink && (
+        <button onClick={onUnlink} className="text-xs text-red-600 hover:underline">
+          Unlink this account from the student record (administrator test)
+        </button>
+      )}
+    </div>
+  );
+}
+
+export default function ProfilePage() {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
+
+  function load() {
+    setError(null);
+    fetch("/api/me", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((d) => {
+        if (d.error) throw new Error(d.error);
+        setData(d);
+      })
+      .catch((e) => setError(String(e.message || e)));
+  }
+  useEffect(load, []);
+
+  async function unlinkSelf() {
+    if (!window.confirm("Unlink your account from this student record?")) return;
+    const res = await fetch("/api/link", { method: "DELETE" });
+    if (!res.ok) setError("Could not unlink.");
+    window.dispatchEvent(new Event("student-linked"));
+    load();
+  }
+
+  return (
+    <main className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100 transition-colors">
+      <div className="max-w-3xl mx-auto p-3 sm:p-4 space-y-4">
+        <PageHeader title="My profile">
+          {data?.permissions?.includes(PERMISSIONS.ADMIN_PANEL) && <Link href="/admin" className={nav}>⚙️ Admin</Link>}
+          {data?.access?.board && <Link href="/" className={nav}>🏆 Board</Link>}
+        </PageHeader>
+        {error && <p className="text-red-600">{error}</p>}
+        {!data && !error && <p className="text-gray-500">Loading…</p>}
+        {data && !data.linked && (
+          data.permissions.includes(PERMISSIONS.ADMIN_PANEL)
+            ? <LinkForm admin onLinked={() => { window.dispatchEvent(new Event("student-linked")); load(); }} />
+            : data.pending
+              ? <Notice title="Waiting for approval" text={`Your request to link ID ${data.pending.studentId} is waiting for the administrator. Your results will appear here once it is approved.`} />
+              : data.role === "visitor"
+                ? <Notice title="Visitor account" text="You can open the pages the administrator enabled for you." />
+                : <LinkForm
+                    onLinked={() => {
+                      window.dispatchEvent(new Event("student-linked"));
+                      load();
+  }}
+/>
+        )}
+        {data?.linked && <Profile s={data.student} onUnlink={data.permissions.includes(PERMISSIONS.ADMIN_PANEL) ? unlinkSelf : null} />}
+      </div>
+    </main>
+  );
+}
