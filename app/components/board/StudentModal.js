@@ -93,12 +93,18 @@ export default function StudentModal({ student, courses, semBase, onClose }) {
   // Capture an off-screen, fixed-width copy of the card (the visible card sits inside a
   // scrolling box, which html2canvas renders badly). The picture follows the site's theme.
   const handleExport = async () => {
+    if (!exportRef.current || exporting) return;
+
     const dark = siteIsDark();
     setExportDark(dark);
     setExporting(true);
+
     try {
+      await new Promise((resolve) => setTimeout(resolve, 50));
       const canvas = await nodeToCanvas(exportRef.current, { dark });
       downloadCanvas(canvas, `${firstTwoWords(student.name_en) || "student"}-card`);
+    } catch (err) {
+      console.error(err);
     } finally {
       setExporting(false);
     }
@@ -137,17 +143,15 @@ export default function StudentModal({ student, courses, semBase, onClose }) {
         </div>
       </div>
 
-      {exporting && (
-        <div
-          ref={exportRef}
-          aria-hidden="true"
-          className={`${exportDark ? "dark bg-gray-900 text-gray-100" : "bg-white text-gray-900"} p-5`}
-          style={{ position: "fixed", left: -10000, top: 0, width: 420, lineHeight: 1.4 }}
-        >
-          <CardBody student={student} courses={courses} semBase={semBase} exportMode />
-          <div className="text-[10px] text-gray-400 mt-2 text-right">Student Results Portal</div>
-        </div>
-      )}
+      <div
+        ref={exportRef}
+        aria-hidden="true"
+        className={`${exportDark ? "dark bg-gray-900 text-gray-100" : "bg-white text-gray-900"} p-5`}
+        style={{ position: "fixed", left: -10000, top: 0, width: 420, lineHeight: 1.4, pointerEvents: "none" }}
+      >
+        <CardBody student={student} courses={courses} semBase={semBase} exportMode />
+        <div className="text-[10px] text-gray-400 mt-2 text-right">Student Results Portal</div>
+      </div>
     </div>
   );
 }
